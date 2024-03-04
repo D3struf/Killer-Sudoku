@@ -6,12 +6,21 @@
 #             [3, 4, 1, 2],
 #             [2, 1, 4, 3])
 # Each row or col has a sum of 10 
+# Each group has a sum
+# If a group of 1 is the same as the number
 
 def printMatrix(matrix):
     print("MATRIX: ")
-    for xlist in matrix:
-        for ylist in xlist:
-            print(ylist, end=" ")
+    count = 0
+    for i in range(len(matrix)):
+        if i == 2:
+            print('---------')
+        for j in matrix[i]:
+            count += 1
+            if count == 3:
+                print('|', end=' ')
+            print(j, end=" ")
+        count = 0
         print()
 
 def getValue (matrix, x, y):
