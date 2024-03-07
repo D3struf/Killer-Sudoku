@@ -11,6 +11,7 @@
 # Each group has a sum entered by the user.
 # If a group has only one cell then the sum and the number should be the same.
 import sys
+cages = []
 
 def printMatrix(matrix):
     print("MATRIX: ")
@@ -103,46 +104,64 @@ def promptAgain(prompt):
         print("\nExiting program.")
         sys.exit()
         
-def getCageInput(cages):
+def getCageInput():
+    availableCoords = getAvailableCoordinates()
+    print("Available coordinates: ", availableCoords)
     print("FORMAT: (row, col)")
     print("NOTE: Just press Enter to close the cage input.")
     cage_sets = []
     while True:
-        cages_input = cagePrompt()
-        if cages_input == ' ':
+        cages_input = cagePrompt(availableCoords)
+        if cages_input == '':
             break
         cage_sets.append(cages_input)
 
+    list_cage = []
     for cage_set in cage_sets:
         cells = tuple(map(int, cage_set.split(",")))
-        cages.append(cells)
+        list_cage.append(cells)
+
+    cages.append(list_cage)
     print("Cages:", cages)
     
-def cagePrompt():
-    coords = ''
+def cagePrompt(availableCoords):
     try:
-        while len(coords) != 3:
+        while True:
             coords = input('Enter Cage Cell: ')
+            if not coords:
+                return ''
             
             x, y = coords.split(',')
-            if coords[1] != ',' or (int(x) >= 4 or int(y) >= 4):
+            if len(coords) != 3 and coords[1] != ',' or (int(x) >= 4 or int(y) >= 4):
                 print("Invalid Coordinates!! Try Again...")
-                return cagePrompt()
-        else: 
-            return coords
+                return cagePrompt(availableCoords)
+            elif (int(x),int(y)) not in availableCoords:
+                print("Coordinate already been selected in other cage, Try Again!")
+                return cagePrompt(availableCoords)
+            else: 
+                return coords
+                
     except ValueError:
         print("Invalid Coordinates!! Try Again...")
-        return cagePrompt()
+        return cagePrompt(availableCoords)
     except KeyboardInterrupt:
         print("\nExiting program.")
         sys.exit()
+        
+def getAvailableCoordinates():
+    all_coordinates = set((i, j) for i in range(4) for j in range(4))
+    used_coordinates = set(cells for cage in cages for cells in cage)
+    available_coordinates = all_coordinates - used_coordinates
+    return available_coordinates
 
 if __name__ == '__main__':
     matrix = initializeMatrix()
     askAgain = 'y'
-    cages = []
     
-    getCageInput(cages)
+    while True:
+        getCageInput()
+        if not getAvailableCoordinates():
+            break
     
     # while askAgain == 'y':
     #     printMatrix(matrix)
