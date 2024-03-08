@@ -10,6 +10,8 @@
 # Each row, col, and 2x2 subgrid should have a sum of 10.
 # Each group has a sum entered by the user.
 # If a group has only one cell then the sum and the number should be the same.
+# In a cage no number must appear more than once
+
 import sys
 cages = []
 
@@ -100,6 +102,9 @@ def promptAgain(prompt):
         elif prompt == 'userVal':
             ask = input("Please Enter Value: ")
             return ask
+        elif prompt == 'cageSum':
+            ask = int(input("Please Enter Cage Sum: "))
+            return ask
     except KeyboardInterrupt:
         print("\nExiting program.")
         sys.exit()
@@ -121,8 +126,8 @@ def getCageInput():
         cells = tuple(map(int, cage_set.split(",")))
         list_cage.append(cells)
 
-    cages.append(list_cage)
-    print("Cages:", cages)
+    sumCage = getCageSum(len(list_cage))
+    cages.append((list_cage, sumCage))
     
 def cagePrompt(availableCoords):
     try:
@@ -150,16 +155,41 @@ def cagePrompt(availableCoords):
         
 def getAvailableCoordinates():
     all_coordinates = set((i, j) for i in range(4) for j in range(4))
-    used_coordinates = set(cells for cage in cages for cells in cage)
+    used_coordinates = set(coords for cage, cageSum in cages for coords in cage)
     available_coordinates = all_coordinates - used_coordinates
     return available_coordinates
 
+from itertools import combinations
+
+def getPossibleSums(cellCount):
+    numbers = [1, 2, 3, 4]
+    all_combinations = list(combinations(numbers, cellCount))
+    possible_sums = set()
+
+    for combination in all_combinations:
+        possible_sums.add(sum(combination))
+
+    return sorted(list(possible_sums))
+    
+def getCageSum(cellCount):
+    availableSums = getPossibleSums(cellCount)
+    print(" Available Cage Sum: ", availableSums)
+    
+    while True:
+        askUserCageSum = promptAgain("cageSum")
+        if askUserCageSum in availableSums:
+            print(" Sum: ", askUserCageSum)
+            return askUserCageSum
+        else:
+            print(" Invalid sum for cage, Try again...")
+        
 if __name__ == '__main__':
     matrix = initializeMatrix()
     askAgain = 'y'
     
     while True:
         getCageInput()
+        print("Cages: ", cages)
         if not getAvailableCoordinates():
             break
     
