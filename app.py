@@ -12,23 +12,11 @@
 # If a group has only one cell then the sum and the number should be the same.
 # In a cage no number must appear more than once
 
+from itertools import combinations
 import sys
+
 cages = []
 
-def printMatrix(matrix):
-    print("MATRIX: ")
-    count = 0
-    for i in range(len(matrix)):
-        if i == 2:
-            print('---------')
-        for j in matrix[i]:
-            count += 1
-            if count == 3:
-                print('|', end=' ')
-            print(j, end=" ")
-        count = 0
-        print()
-        
 def checkDuplicate(matrix, x, y, value, check):
     if check == 'row':
         return value in matrix[int(x)]
@@ -84,7 +72,7 @@ def getCoords():
     except ValueError:
         print("Invalid Coordinates!! Try Again...")
         return getCoords()
-    
+
 def initializeMatrix():
     return [[0 for _ in range(4)] for _ in range(4)]
 
@@ -159,8 +147,6 @@ def getAvailableCoordinates():
     available_coordinates = all_coordinates - used_coordinates
     return available_coordinates
 
-from itertools import combinations
-
 def getPossibleSums(cellCount):
     numbers = [1, 2, 3, 4]
     all_combinations = list(combinations(numbers, cellCount))
@@ -182,12 +168,31 @@ def getCageSum(cellCount):
             return askUserCageSum
         else:
             print(" Invalid sum for cage, Try again...")
-        
+
+def printMatrixWithCages(matrix, cages):
+    print("MATRIX:")
+    print('---------------------------------')
+    for i in range(len(matrix)):
+        for j in range(len(matrix[i])):
+            print('|', end=' ')
+            cell_value = matrix[i][j]
+            cage_id = getCageId((i, j), cages)
+            print(f'{cell_value} ({cage_id})', end=' ')
+        print('|')
+        print('---------------------------------')
+
+def getCageId(coord, cages):
+    for idx, (cage_coords, _) in enumerate(cages):
+        if coord in cage_coords:
+            return idx + 1
+    return 0
+
 if __name__ == '__main__':
     matrix = initializeMatrix()
     askAgain = 'y'
     
     while True:
+        printMatrixWithCages(matrix, cages)
         getCageInput()
         print("Cages: ", cages)
         if not getAvailableCoordinates():
