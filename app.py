@@ -99,9 +99,9 @@ def promptAgain(prompt):
         
 def getCageInput():
     availableCoords = getAvailableCoordinates()
-    print("Available coordinates: ", availableCoords)
     print("FORMAT: (row, col)")
-    print("NOTE: Just press Enter to close the cage input.")
+    print("Available coordinates: ", availableCoords)
+    print("NOTE: Just press Enter to close the cage prompt.")
     cage_sets = []
     while True:
         cages_input = cagePrompt(availableCoords)
@@ -143,9 +143,10 @@ def cagePrompt(availableCoords):
         
 def getAvailableCoordinates():
     all_coordinates = set((i, j) for i in range(4) for j in range(4))
-    used_coordinates = set(coords for cage, cageSum in cages for coords in cage)
+    used_coordinates = set(coords for cage, _ in cages for coords in cage)
     available_coordinates = all_coordinates - used_coordinates
-    return available_coordinates
+    sorted_coordinates = sorted(list(available_coordinates))
+    return sorted_coordinates
 
 def getPossibleSums(cellCount):
     numbers = [1, 2, 3, 4]
@@ -170,7 +171,14 @@ def getCageSum(cellCount):
             print(" Invalid sum for cage, Try again...")
 
 def printMatrixWithCages(matrix, cages):
+    def getCageId(coord, cages):
+        for idx, (cage_coords, _) in enumerate(cages):
+            if coord in cage_coords:
+                return idx + 1
+        return 0
+
     print("MATRIX:")
+    print("    0       1       2       3")
     print('---------------------------------')
     for i in range(len(matrix)):
         for j in range(len(matrix[i])):
@@ -178,14 +186,11 @@ def printMatrixWithCages(matrix, cages):
             cell_value = matrix[i][j]
             cage_id = getCageId((i, j), cages)
             print(f'{cell_value} ({cage_id})', end=' ')
-        print('|')
+        print('|', end='   ')
+        print(i)
         print('---------------------------------')
 
-def getCageId(coord, cages):
-    for idx, (cage_coords, _) in enumerate(cages):
-        if coord in cage_coords:
-            return idx + 1
-    return 0
+
 
 if __name__ == '__main__':
     matrix = initializeMatrix()
