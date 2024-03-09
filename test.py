@@ -1,171 +1,300 @@
-import pygame
-import sys
-import json
+from itertools import permutations
+import random
+cages = []
+total_attemp = 0
 
-# Initialize Pygame
-pygame.init()
+def generate_board():
+    return [[0 for _ in range(4)] for _ in range(4)]
 
-# Constants
-WIDTH, HEIGHT = 600, 600
-GRID_SIZE = 4
-CELL_SIZE = WIDTH // GRID_SIZE
+def print_boxes_layout(board):
+    for i in range(4):
+        print(f" [{i}]", end="")
+    print()
 
-# Colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-INNER_BORDER_COLOR = (100, 100, 255)
-OUTER_BORDER_COLOR = (0, 0, 0)
+    for i in range(4):
+        for j in range(4):
+            print("+---", end="")
+        print("+")
 
-# Initialize the Pygame window
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Killer Sudoku Grid")
+        for j in range(4):
+            if board[i][j] == 0:
+                print("|   ", end="")
+            else:
+                print(f"| {board[i][j]} ", end="")
+        print(f"| [{i}]")
 
-# Function to draw the Sudoku grid
-def draw_grid():
-    for i in range(1, GRID_SIZE):
-        # Draw vertical lines
-        pygame.draw.line(screen, BLACK, (i * CELL_SIZE, 0), (i * CELL_SIZE, HEIGHT), 2)
-        # Draw horizontal lines
-        pygame.draw.line(screen, BLACK, (0, i * CELL_SIZE), (WIDTH, i * CELL_SIZE), 2)
+    for j in range(4):
+        print("+---", end="")
+    print("+")
 
-# Function to draw numbers in cells
-def draw_numbers(board):
-    font = pygame.font.Font(None, 36)
-    for i in range(GRID_SIZE):
-        for j in range(GRID_SIZE):
-            if board[i][j]["value"] != 0:
-                number = font.render(str(board[i][j]["value"]), True, BLACK)
-                screen.blit(number, (j * CELL_SIZE + CELL_SIZE // 2 - 10, i * CELL_SIZE + CELL_SIZE // 2 - 15))
+texts = [
+    "---",
+    "Machine Problem 2",
+    "4x4 Killer Sudoku using Hill-climb Algorithm",
+    "by: Andrew Oloroso",
+    "Github Repo: https://github.com/ChugxScript/Killer-Sodoku-using-Local-Search"
+]
 
-# Function to draw inner borders for selected groups
-def draw_inner_borders(selected_groups):
-    for group in selected_groups:
-        for cell in group:
-            pygame.draw.rect(screen, INNER_BORDER_COLOR, (cell["col"] * CELL_SIZE, cell["row"] * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2)
+def get_cage_input(board):
+    available_coordinates = [(i, j) for i in range(4) for j in range(4) if board[i][j] == 0]
+    while True:
+        print("Available coordinates:", available_coordinates)
+        cage_input = input("Enter cage cells (row,col) separated by space (e.g., 1,1 1,2 2,1 2,2): ")
+        cells = [tuple(map(int, cell.split(','))) for cell in cage_input.split()]
+        valid_cells = True
+        for cell in cells:
+            if cell not in available_coordinates:
+                print("Invalid cell coordinates or cell already assigned to another cage. Please choose from available coordinates.")
+                valid_cells = False
+                break
+        if valid_cells:
+            return cells
 
-# Function to draw outer borders for the entire grid
-def draw_outer_borders():
-    pygame.draw.rect(screen, OUTER_BORDER_COLOR, (0, 0, WIDTH, HEIGHT), 4)
+def get_cage_sum(board, cells):
+    while True:
+        print(f"Available cage sum is from [{len(cells)}] to [{len(cells) * 4}]")
+        cage_sum = input("Enter the sum for this cage: ")
+        if not cage_sum.isdigit():
+            print("\n[! INVALID INPUT !]")
+            print("Sum must be a positive integer.\n")
+        else:
+            if (int(cage_sum) > 0 and int(cage_sum) >= len(cells) and int(cage_sum) <= (len(cells) * 4)):
+                return int(cage_sum)
+            else:
+                print("\n[! INVALID INPUT !]")
+                print("Sum must be a align with the length of the cage.")
+                print(f"Available cage sum is from [{len(cells)}] to [{len(cells) * 4}]\n")
+        print("\n\nUpdated board:")
+        print_boxes_layout(board)
 
-# Function to get user input for the sum
-def get_user_input():
-    input_box = pygame.Rect(150, 200, 140, 32)
-    color_inactive = pygame.Color('lightskyblue3')
-    color_active = pygame.Color('dodgerblue2')
-    color = color_inactive
-    active = False
-    text = ''
-    font = pygame.font.Font(None, 32)
-    clock = pygame.time.Clock()
+def generate_cell_num(board, cells, cage_sum, call):
+    global cages
+    numbers = [1, 2, 3, 4]
+
+    if call == 'main':
+        for perm in permutations(numbers, len(cells)):
+            if sum(perm) == cage_sum:
+                for idx, cell in enumerate(cells):
+                    row, col = cell
+                    board[row][col] = perm[idx]
+                return True
+        return False
+
+def solve(board):
+    global cages
+
+    # Calculate initial errors
+    row_col_errors, duplicates = check_errors(board)
+    initial_errors = sum_errors(row_col_errors, duplicates)
+
+    attempt = 0
+    modify = 0
+    cage_idx = [0] * len(cages)
+    modify_cage = [0] * len(cages)
+    check_perm(modify_cage)
 
     while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if input_box.collidepoint(event.pos):
-                    active = not active
+        # Find the cage with the most errors
+        max_errors_cage_index = get_max_errors_cage(board, cages, row_col_errors, duplicates, modify)
+
+        # Generate new state by switching numbers in the cage
+        new_board = switch_numbers_in_cage(board, cages[max_errors_cage_index], cage_idx, max_errors_cage_index)
+
+        # Calculate errors in the new state
+        new_row_col_errors, new_duplicates = check_errors(new_board)
+        new_errors = sum_errors(new_row_col_errors, new_duplicates)
+
+        # If the new state has fewer errors, update the board
+        if new_errors < initial_errors:
+            board = new_board
+            row_col_errors = new_row_col_errors
+            duplicates = new_duplicates
+            initial_errors = new_errors
+
+            if not row_col_errors and not duplicates:
+                return board
+            attempt = 0
+
+        else:
+            if attempt > (sum(modify_cage) - modify_cage[modify]):
+                # check if no improvement then modify cell to avoid getting stuck
+                new_board = switch_numbers_in_cage(board, cages[modify], cage_idx, modify)
+                new_row_col_errors, new_duplicates = check_errors(new_board)
+                
+                if not new_row_col_errors and not new_duplicates:
+                    board = new_board
+                    return board
+                
+                if modify_cage[modify] == cage_idx[modify]:
+                    modify += 1
+                    if modify >= len(cages):
+                        return board
+                
+                attempt = 0
+                    
+            else:
+                attempt += 1
+
+def get_max_errors_cage(board, cages, row_col_errors, duplicates, modify):
+    max_errors = -1
+    max_errors_cage_index = -1
+
+    for i, (cage_sum, cells) in enumerate(cages):
+        if i != modify:
+            cage_errors = count_cage_errors(cells, row_col_errors, duplicates)
+            if cage_errors > max_errors:
+                max_errors = cage_errors
+                max_errors_cage_index = i
+
+    return max_errors_cage_index
+
+def count_cage_errors(cells, row_col_errors, duplicates):
+    cage_errors = 0
+    for coord in cells:
+        if coord in row_col_errors.values():
+            cage_errors += 1
+    for coord_list in duplicates.values():
+        for coord in coord_list:
+            if coord in cells:
+                cage_errors += 1
+    return cage_errors
+
+def switch_numbers_in_cage(board, cage, cage_idx, max_errors_cage_index):
+    new_board = [row[:] for row in board]  # Create a copy of the board
+    cage_sum, cells = cage
+    numbers = [1, 2, 3, 4]
+    perm_limit = 0
+    perm_idx = 0
+
+    for perm in permutations(numbers, len(cells)):
+        if sum(perm) == cage_sum:
+            perm_limit += 1
+
+    if perm_limit > cage_idx[max_errors_cage_index]:
+        cage_idx[max_errors_cage_index] += 1
+    else:
+        cage_idx[max_errors_cage_index] = 1
+
+    for perm in permutations(numbers, len(cells)):
+        if sum(perm) == cage_sum and perm_idx < cage_idx[max_errors_cage_index]:
+            for idx, (row, col) in enumerate(cells):
+                new_board[row][col] = perm[idx]
+            perm_idx += 1
+
+    return new_board
+
+def check_perm(modify_cage):
+    global cages
+    numbers = [1, 2, 3, 4]
+
+    for i, (cage_sum, cells) in enumerate(cages):
+        for perm in permutations(numbers, len(cells)):
+            if sum(perm) == cage_sum:
+                modify_cage[i] += 1
+
+def check_errors(board):
+    n = len(board)
+    row_errors = [0] * n
+    col_errors = [0] * n
+    row_col_errors = {}
+    duplicates = {}
+
+    # get coordinates of errors in each row and column
+    for i in range(n):
+        row_nums = set()
+        col_nums = set()
+        row_err = {}
+        col_err = {}
+        for j in range(n):
+            if board[i][j] == 0:
+                row_errors[i] += 1
+                if board[i][j] in row_col_errors:
+                    row_col_errors[board[i][j]].append((i, j))
                 else:
-                    active = False
-                color = color_active if active else color_inactive
-            if event.type == pygame.KEYDOWN:
-                if active:
-                    if event.key == pygame.K_RETURN:
-                        return int(text) if text.isdigit() else None
-                    elif event.key == pygame.K_BACKSPACE:
-                        text = text[:-1]
-                    else:
-                        text += event.unicode
-                    color = color_active
+                    row_col_errors[board[i][j]] = [(i, j), row_err[board[i][j]]]
+            elif board[i][j] in row_nums:
+                row_errors[i] += 1
+                if board[i][j] in row_col_errors:
+                    row_col_errors[board[i][j]].append((i, j))
+                else:
+                    row_col_errors[board[i][j]] = [(i, j), row_err[board[i][j]]]
+            else:
+                row_nums.add(board[i][j])
+                row_err[board[i][j]] = (i, j)
+            
+            if board[j][i] == 0:
+                col_errors[i] += 1
+                if board[j][i] in row_col_errors:
+                    row_col_errors[board[j][i]].append((j, i))
+                else:
+                    row_col_errors[board[j][i]] = [(j, i), col_err[board[j][i]]]
+            elif board[j][i] in col_nums:
+                col_errors[i] += 1
+                if board[j][i] in row_col_errors:
+                    row_col_errors[board[j][i]].append((j, i))
+                else:
+                    row_col_errors[board[j][i]] = [(j, i), col_err[board[j][i]]]
+            else:
+                col_nums.add(board[j][i])
+                col_err[board[j][i]] = (j, i)
+    
+    # get coordinates of errors in 2x2 subgrid
+    for i in range(0, len(board), 2):
+        for j in range(0, len(board[0]), 2):
+            coord = {}
+            subgrid_values = set()
+            for x in range(i, i + 2):
+                for y in range(j, j + 2):
+                    cell_value = board[x][y]
+                    if cell_value != 0:
+                        if cell_value in subgrid_values:
+                            if cell_value in duplicates:
+                                duplicates[cell_value].append((x, y))
+                            else:
+                                duplicates[cell_value] = [(x, y), coord[cell_value]]
+                        else:
+                            coord[cell_value] = (x, y)
+                            subgrid_values.add(cell_value)
+    
+    return row_col_errors, duplicates
 
-        screen.fill(WHITE)
-        txt_surface = font.render(text, True, color)
-        width = max(200, txt_surface.get_width()+10)
-        input_box.w = width
-        screen.blit(txt_surface, (input_box.x+5, input_box.y+5))
-        pygame.draw.rect(screen, color, input_box, 2)
+def sum_errors(row_col_errors, duplicates):
+    # Calculate total errors from row_col_errors and duplicates
+    return sum(len(coords) for coords in row_col_errors.values()) + sum(len(coords) for coords in duplicates.values())
 
-        pygame.display.flip()
-        clock.tick(30)
-
-# Function to save the Sudoku board to a JSON file
-def save_board(board):
-    with open("killer_sudoku_board.json", "w") as file:
-        json.dump(board, file)
-
-# Function to load the Sudoku board from a JSON file
-def load_board():
-    try:
-        with open("killer_sudoku_board.json", "r") as file:
-            return json.load(file)
-    except FileNotFoundError:
-        return None
-
-# Main game loop
 def main():
-    killer_board = load_board()
-    if killer_board is None:
-        killer_board = [
-            [{"value": 0, "group": None} for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)
-        ]
+    board = generate_board()
+    print("Welcome to 4x4 Killer Sudoku!")
+    print("Please enter the cages:")
+    print_boxes_layout(board)
 
-    assigned_groups = []
-    selected_cells = []
+    global cages
+    while any(0 in row for row in board):
+        print(f"\nCage {len(cages) + 1}:")
+        cells = get_cage_input(board)
+        cage_sum = get_cage_sum(board, cells)
+        if generate_cell_num(board, cells, cage_sum, 'main'):
+            cages.append((cage_sum, cells))
+        else:
+            print("\n[! INVALID CAGE !]\n")
+        
+        print("\n\nUpdated board:")
+        print_boxes_layout(board)
 
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                selected_col = mouse_x // CELL_SIZE
-                selected_row = mouse_y // CELL_SIZE
-                if selected_row < GRID_SIZE and selected_col < GRID_SIZE:
-                    if all(cell not in assigned_groups for cell in [{"row": selected_row, "col": selected_col}] + selected_cells):
-                        selected_cells.append({"row": selected_row, "col": selected_col})
-            elif event.type == pygame.MOUSEMOTION and event.buttons[0] == 1:  # Left mouse button is pressed
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                current_col = mouse_x // CELL_SIZE
-                current_row = mouse_y // CELL_SIZE
-                if current_row < GRID_SIZE and current_col < GRID_SIZE:
-                    if not any(cell == {"row": current_row, "col": current_col} for cell in assigned_groups + selected_cells):
-                        selected_cells.append({"row": current_row, "col": current_col})
-            elif event.type == pygame.KEYDOWN:
-                if event.unicode.isdigit() and selected_cells:
-                    sum_value = int(event.unicode)
-                    for cell in selected_cells:
-                        killer_board[cell["row"]][cell["col"]]["value"] = sum_value
-                        killer_board[cell["row"]][cell["col"]]["group"] = selected_cells.copy()
-                    assigned_groups.append(selected_cells)
-                    selected_cells = []
-                elif event.key == pygame.K_SPACE and selected_cells:
-                    # Prompt the user for the sum
-                    user_sum = get_user_input()
-                    if user_sum is not None:
-                        for cell in selected_cells:
-                            killer_board[cell["row"]][cell["col"]]["value"] = user_sum
-                            killer_board[cell["row"]][cell["col"]]["group"] = selected_cells.copy()
-                        assigned_groups.append(selected_cells)
-                        selected_cells = []
-                elif event.key == pygame.K_s:
-                    # Save the current state of the board
-                    save_board(killer_board)
+    hill_climb_board = solve(board)
+    row_col_errors, duplicates = check_errors(hill_climb_board)
 
-        # Draw the grid
-        screen.fill(WHITE)
-        draw_outer_borders()
-        draw_grid()
+    # Check if there are no errors 
+    if not row_col_errors and not duplicates:
+        print("\n>>>Solution found:")
+        print_boxes_layout(hill_climb_board)
+    else:
+        print("\n>>>No solution found.")
+        print("This is the last attempt of the hill-climb algorithm")
+        print_boxes_layout(hill_climb_board)
 
-        # Draw inner borders for selected groups
-        draw_inner_borders(assigned_groups)
-
-        # Draw numbers in cells
-        draw_numbers(killer_board)
-
-        # Update the display
-        pygame.display.flip()
+    for text in texts:
+        print(text)
 
 if __name__ == "__main__":
     main()

@@ -1,80 +1,9 @@
-# Killer Sudoku Problem
-# Made by John Paul Monter
-
-# matrix = ([1, 2, 3, 4],
-#             [4, 3, 2, 1],
-#             [3, 4, 1, 2],
-#             [2, 1, 4, 3])
-# Each row should have numbers 1 to 4 and does not have a duplicate.
-# Each column should have numbers 1 to 4 and does not have a duplicate.
-# Each row, col, and 2x2 subgrid should have a sum of 10.
-# Each group has a sum entered by the user.
-# If a group has only one cell then the sum and the number should be the same.
-# In a cage no number must appear more than once
-
 from itertools import combinations
 import sys
 import random
 
 cages = []
 
-def checkDuplicate(matrix, x, y, value, check):
-    if check == 'row':
-        return value in matrix[int(x)]
-    elif check == 'col':
-        return value in [matrix[i][int(y)] for i in range(4)]
-    elif check == 'subgrid':
-        subgrid_values = [matrix[i][j] for i in range(2 * (int(x) // 2), 2 * (int(x) // 2) + 2) for j in range(2 * (int(y) // 2), 2 * (int(y) // 2) + 2)]
-        return value in subgrid_values
-
-def getValue(matrix, x, y):
-    try:
-        askUserValue = userValue()
-        if not checkDuplicate(matrix, x, y, askUserValue, 'row') and \
-            not checkDuplicate(matrix, x, y, askUserValue, 'col') and \
-            not checkDuplicate(matrix, x, y, askUserValue, 'subgrid'):
-            matrix[int(x)][int(y)] = askUserValue
-            return askUserValue
-        else:
-            print("Duplicate number found in row, column, or subgrid. Try again.")
-            return getValue(matrix, x, y)
-    except ValueError:
-        print("Please Enter a Number")
-        return getValue(matrix, x, y)
-
-def userValue():
-    try:
-        value = int(promptAgain('userVal'))
-        if (value > 4):
-            print("Please Enter Number less than 4")
-            return userValue()
-        elif (value == 0):
-            print("Please Enter a Number from 1 to 4")
-            return userValue()
-        return value
-    except ValueError:
-        print("Please Enter a Number")
-        return userValue()
-
-def getCoords():
-    coords = ''
-    try:
-        while len(coords) != 3:
-            coords = promptAgain('coords')
-            x, y = coords.split(',')
-            
-            if coords[1] != ',' or (int(x) >= 4 or int(y) >= 4):
-                print("Invalid Coordinates!! Try Again...")
-                return getCoords()
-            elif matrix[int(x)][int(y)] != 0:
-                print("Cell already has a number. Try again.")
-                return getCoords()
-        else: return x, y
-    except ValueError:
-        print("Invalid Coordinates!! Try Again...")
-        return getCoords()
-
-# Sudoku setup
 def initializeMatrix():
     return [[0 for _ in range(4)] for _ in range(4)]
 
@@ -192,8 +121,6 @@ def printMatrixWithCages(matrix, cages):
         print(i)
         print('---------------------------------')
 
-# Simulated Annealing for Killer Sudoku
-
 def fillInitialCells(matrix):
     # Randomly fill some cells with valid numbers
     for i in range(4):
@@ -240,17 +167,19 @@ def hillClimbing(matrix, cages):
         best_move_found = False
         for i in range(4):
             for j in range(4):
-                valid_numbers = getValidNumbers(matrix, i, j)
+                # Create a copy of the matrix for modification
+                temp_matrix = [row[:] for row in matrix]  # Slice copying for better performance
+                valid_numbers = getValidNumbers(temp_matrix, i, j)
                 for num in valid_numbers:
-                    original_value = matrix[i][j]
-                    matrix[i][j] = num
-                    # new_score = calculateScore(matrix, cages)
-                    # if new_score < current_score:
-                    #     current_score = new_score
-                    #     best_move_found = True
-                    # else:
-                    #     matrix[i][j] = original_value  # Undo move if it doesn't improve the score
-
+                    original_value = temp_matrix[i][j]
+                    temp_matrix[i][j] = num
+                    new_score = calculateScore(temp_matrix, cages)
+                    if new_score < current_score:
+                        current_score = new_score
+                        best_move_found = True
+                        matrix = temp_matrix.copy()  # Update original matrix only if improved
+                    else:
+                        temp_matrix[i][j] = original_value  # Undo move if it doesn't improve (not strictly necessary here)
         if not best_move_found:
             break
 
@@ -268,20 +197,9 @@ if __name__ == '__main__':
     fillInitialCells(matrix)
     print("Initial Matrix:")
     printMatrixWithCages(matrix, cages)
-    print("Initial Score:", calculateScore(matrix, cages))
 
     hillClimbing(matrix, cages)
 
     print("\nFinal Matrix after Hill Climbing:")
     printMatrixWithCages(matrix, cages)
     print("Final Score:", calculateScore(matrix, cages))
-    
-    # while askAgain == 'y':
-    #     printMatrix(matrix)
-        
-    #     x, y = getCoords();
-        
-    #     print("Value: ", getValue(matrix, x, y))
-    #     printMatrix(matrix)
-        
-    #     askAgain = promptAgain('again')
