@@ -269,11 +269,11 @@ if __name__ == '__main__':
     matrix = initializeMatrix()
     askAgain = 'y'
     
-    # while True:
-    #     printMatrixWithCages(matrix, cages)
-    #     getCageInput()
-    #     if not getAvailableCoordinates():
-    #         break
+    while True:
+        printMatrixWithCages(matrix, cages)
+        getCageInput()
+        if not getAvailableCoordinates():
+            break
     
     indicator(Fore.WHITE, Back.GREEN, "             KILLER SUDOKU             ") 
     print()
