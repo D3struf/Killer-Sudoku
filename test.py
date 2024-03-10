@@ -1,300 +1,288 @@
-from itertools import permutations
-import random
-cages = []
-total_attemp = 0
+# Killer Sudoku Problem
+# Made by John Paul Monter
 
-def generate_board():
+# matrix = ([1, 2, 3, 4],
+#             [4, 3, 2, 1],
+#             [3, 4, 1, 2],
+#             [2, 1, 4, 3])
+# Each row should have numbers 1 to 4 and does not have a duplicate.
+# Each column should have numbers 1 to 4 and does not have a duplicate.
+# Each row, col, and 2x2 subgrid should have a sum of 10.
+# Each group has a sum entered by the user.
+# If a group has only one cell then the sum and the number should be the same.
+# In a cage no number must appear more than once
+
+from itertools import combinations
+import sys
+import random
+
+cages = []
+
+def checkDuplicate(matrix, x, y, value, check):
+    if check == 'row':
+        return value in matrix[int(x)]
+    elif check == 'col':
+        return value in [matrix[i][int(y)] for i in range(4)]
+    elif check == 'subgrid':
+        subgrid_values = [matrix[i][j] for i in range(2 * (int(x) // 2), 2 * (int(x) // 2) + 2) for j in range(2 * (int(y) // 2), 2 * (int(y) // 2) + 2)]
+        return value in subgrid_values
+
+def getValue(matrix, x, y):
+    try:
+        askUserValue = userValue()
+        if not checkDuplicate(matrix, x, y, askUserValue, 'row') and \
+            not checkDuplicate(matrix, x, y, askUserValue, 'col') and \
+            not checkDuplicate(matrix, x, y, askUserValue, 'subgrid'):
+            matrix[int(x)][int(y)] = askUserValue
+            return askUserValue
+        else:
+            print("Duplicate number found in row, column, or subgrid. Try again.")
+            return getValue(matrix, x, y)
+    except ValueError:
+        print("Please Enter a Number")
+        return getValue(matrix, x, y)
+
+def userValue():
+    try:
+        value = int(promptAgain('userVal'))
+        if (value > 4):
+            print("Please Enter Number less than 4")
+            return userValue()
+        elif (value == 0):
+            print("Please Enter a Number from 1 to 4")
+            return userValue()
+        return value
+    except ValueError:
+        print("Please Enter a Number")
+        return userValue()
+
+def getCoords():
+    coords = ''
+    try:
+        while len(coords) != 3:
+            coords = promptAgain('coords')
+            x, y = coords.split(',')
+            
+            if coords[1] != ',' or (int(x) >= 4 or int(y) >= 4):
+                print("Invalid Coordinates!! Try Again...")
+                return getCoords()
+            elif matrix[int(x)][int(y)] != 0:
+                print("Cell already has a number. Try again.")
+                return getCoords()
+        else: return x, y
+    except ValueError:
+        print("Invalid Coordinates!! Try Again...")
+        return getCoords()
+
+# Sudoku setup
+def initializeMatrix():
     return [[0 for _ in range(4)] for _ in range(4)]
 
-def print_boxes_layout(board):
-    for i in range(4):
-        print(f" [{i}]", end="")
-    print()
-
-    for i in range(4):
-        for j in range(4):
-            print("+---", end="")
-        print("+")
-
-        for j in range(4):
-            if board[i][j] == 0:
-                print("|   ", end="")
-            else:
-                print(f"| {board[i][j]} ", end="")
-        print(f"| [{i}]")
-
-    for j in range(4):
-        print("+---", end="")
-    print("+")
-
-texts = [
-    "---",
-    "Machine Problem 2",
-    "4x4 Killer Sudoku using Hill-climb Algorithm",
-    "by: Andrew Oloroso",
-    "Github Repo: https://github.com/ChugxScript/Killer-Sodoku-using-Local-Search"
-]
-
-def get_cage_input(board):
-    available_coordinates = [(i, j) for i in range(4) for j in range(4) if board[i][j] == 0]
-    while True:
-        print("Available coordinates:", available_coordinates)
-        cage_input = input("Enter cage cells (row,col) separated by space (e.g., 1,1 1,2 2,1 2,2): ")
-        cells = [tuple(map(int, cell.split(','))) for cell in cage_input.split()]
-        valid_cells = True
-        for cell in cells:
-            if cell not in available_coordinates:
-                print("Invalid cell coordinates or cell already assigned to another cage. Please choose from available coordinates.")
-                valid_cells = False
-                break
-        if valid_cells:
-            return cells
-
-def get_cage_sum(board, cells):
-    while True:
-        print(f"Available cage sum is from [{len(cells)}] to [{len(cells) * 4}]")
-        cage_sum = input("Enter the sum for this cage: ")
-        if not cage_sum.isdigit():
-            print("\n[! INVALID INPUT !]")
-            print("Sum must be a positive integer.\n")
-        else:
-            if (int(cage_sum) > 0 and int(cage_sum) >= len(cells) and int(cage_sum) <= (len(cells) * 4)):
-                return int(cage_sum)
-            else:
-                print("\n[! INVALID INPUT !]")
-                print("Sum must be a align with the length of the cage.")
-                print(f"Available cage sum is from [{len(cells)}] to [{len(cells) * 4}]\n")
-        print("\n\nUpdated board:")
-        print_boxes_layout(board)
-
-def generate_cell_num(board, cells, cage_sum, call):
-    global cages
-    numbers = [1, 2, 3, 4]
-
-    if call == 'main':
-        for perm in permutations(numbers, len(cells)):
-            if sum(perm) == cage_sum:
-                for idx, cell in enumerate(cells):
-                    row, col = cell
-                    board[row][col] = perm[idx]
-                return True
-        return False
-
-def solve(board):
-    global cages
-
-    # Calculate initial errors
-    row_col_errors, duplicates = check_errors(board)
-    initial_errors = sum_errors(row_col_errors, duplicates)
-
-    attempt = 0
-    modify = 0
-    cage_idx = [0] * len(cages)
-    modify_cage = [0] * len(cages)
-    check_perm(modify_cage)
-
-    while True:
-        # Find the cage with the most errors
-        max_errors_cage_index = get_max_errors_cage(board, cages, row_col_errors, duplicates, modify)
-
-        # Generate new state by switching numbers in the cage
-        new_board = switch_numbers_in_cage(board, cages[max_errors_cage_index], cage_idx, max_errors_cage_index)
-
-        # Calculate errors in the new state
-        new_row_col_errors, new_duplicates = check_errors(new_board)
-        new_errors = sum_errors(new_row_col_errors, new_duplicates)
-
-        # If the new state has fewer errors, update the board
-        if new_errors < initial_errors:
-            board = new_board
-            row_col_errors = new_row_col_errors
-            duplicates = new_duplicates
-            initial_errors = new_errors
-
-            if not row_col_errors and not duplicates:
-                return board
-            attempt = 0
-
-        else:
-            if attempt > (sum(modify_cage) - modify_cage[modify]):
-                # check if no improvement then modify cell to avoid getting stuck
-                new_board = switch_numbers_in_cage(board, cages[modify], cage_idx, modify)
-                new_row_col_errors, new_duplicates = check_errors(new_board)
-                
-                if not new_row_col_errors and not new_duplicates:
-                    board = new_board
-                    return board
-                
-                if modify_cage[modify] == cage_idx[modify]:
-                    modify += 1
-                    if modify >= len(cages):
-                        return board
-                
-                attempt = 0
-                    
-            else:
-                attempt += 1
-
-def get_max_errors_cage(board, cages, row_col_errors, duplicates, modify):
-    max_errors = -1
-    max_errors_cage_index = -1
-
-    for i, (cage_sum, cells) in enumerate(cages):
-        if i != modify:
-            cage_errors = count_cage_errors(cells, row_col_errors, duplicates)
-            if cage_errors > max_errors:
-                max_errors = cage_errors
-                max_errors_cage_index = i
-
-    return max_errors_cage_index
-
-def count_cage_errors(cells, row_col_errors, duplicates):
-    cage_errors = 0
-    for coord in cells:
-        if coord in row_col_errors.values():
-            cage_errors += 1
-    for coord_list in duplicates.values():
-        for coord in coord_list:
-            if coord in cells:
-                cage_errors += 1
-    return cage_errors
-
-def switch_numbers_in_cage(board, cage, cage_idx, max_errors_cage_index):
-    new_board = [row[:] for row in board]  # Create a copy of the board
-    cage_sum, cells = cage
-    numbers = [1, 2, 3, 4]
-    perm_limit = 0
-    perm_idx = 0
-
-    for perm in permutations(numbers, len(cells)):
-        if sum(perm) == cage_sum:
-            perm_limit += 1
-
-    if perm_limit > cage_idx[max_errors_cage_index]:
-        cage_idx[max_errors_cage_index] += 1
-    else:
-        cage_idx[max_errors_cage_index] = 1
-
-    for perm in permutations(numbers, len(cells)):
-        if sum(perm) == cage_sum and perm_idx < cage_idx[max_errors_cage_index]:
-            for idx, (row, col) in enumerate(cells):
-                new_board[row][col] = perm[idx]
-            perm_idx += 1
-
-    return new_board
-
-def check_perm(modify_cage):
-    global cages
-    numbers = [1, 2, 3, 4]
-
-    for i, (cage_sum, cells) in enumerate(cages):
-        for perm in permutations(numbers, len(cells)):
-            if sum(perm) == cage_sum:
-                modify_cage[i] += 1
-
-def check_errors(board):
-    n = len(board)
-    row_errors = [0] * n
-    col_errors = [0] * n
-    row_col_errors = {}
-    duplicates = {}
-
-    # get coordinates of errors in each row and column
-    for i in range(n):
-        row_nums = set()
-        col_nums = set()
-        row_err = {}
-        col_err = {}
-        for j in range(n):
-            if board[i][j] == 0:
-                row_errors[i] += 1
-                if board[i][j] in row_col_errors:
-                    row_col_errors[board[i][j]].append((i, j))
-                else:
-                    row_col_errors[board[i][j]] = [(i, j), row_err[board[i][j]]]
-            elif board[i][j] in row_nums:
-                row_errors[i] += 1
-                if board[i][j] in row_col_errors:
-                    row_col_errors[board[i][j]].append((i, j))
-                else:
-                    row_col_errors[board[i][j]] = [(i, j), row_err[board[i][j]]]
-            else:
-                row_nums.add(board[i][j])
-                row_err[board[i][j]] = (i, j)
-            
-            if board[j][i] == 0:
-                col_errors[i] += 1
-                if board[j][i] in row_col_errors:
-                    row_col_errors[board[j][i]].append((j, i))
-                else:
-                    row_col_errors[board[j][i]] = [(j, i), col_err[board[j][i]]]
-            elif board[j][i] in col_nums:
-                col_errors[i] += 1
-                if board[j][i] in row_col_errors:
-                    row_col_errors[board[j][i]].append((j, i))
-                else:
-                    row_col_errors[board[j][i]] = [(j, i), col_err[board[j][i]]]
-            else:
-                col_nums.add(board[j][i])
-                col_err[board[j][i]] = (j, i)
-    
-    # get coordinates of errors in 2x2 subgrid
-    for i in range(0, len(board), 2):
-        for j in range(0, len(board[0]), 2):
-            coord = {}
-            subgrid_values = set()
-            for x in range(i, i + 2):
-                for y in range(j, j + 2):
-                    cell_value = board[x][y]
-                    if cell_value != 0:
-                        if cell_value in subgrid_values:
-                            if cell_value in duplicates:
-                                duplicates[cell_value].append((x, y))
-                            else:
-                                duplicates[cell_value] = [(x, y), coord[cell_value]]
-                        else:
-                            coord[cell_value] = (x, y)
-                            subgrid_values.add(cell_value)
-    
-    return row_col_errors, duplicates
-
-def sum_errors(row_col_errors, duplicates):
-    # Calculate total errors from row_col_errors and duplicates
-    return sum(len(coords) for coords in row_col_errors.values()) + sum(len(coords) for coords in duplicates.values())
-
-def main():
-    board = generate_board()
-    print("Welcome to 4x4 Killer Sudoku!")
-    print("Please enter the cages:")
-    print_boxes_layout(board)
-
-    global cages
-    while any(0 in row for row in board):
-        print(f"\nCage {len(cages) + 1}:")
-        cells = get_cage_input(board)
-        cage_sum = get_cage_sum(board, cells)
-        if generate_cell_num(board, cells, cage_sum, 'main'):
-            cages.append((cage_sum, cells))
-        else:
-            print("\n[! INVALID CAGE !]\n")
+def promptAgain(prompt):
+    try:
+        if prompt == 'again':
+            # Continue when Enter key is pressed
+            ask = input("Would you like to enter another Value? (y or n): ") or 'y'
+            if ask == 'y' or ask == 'n':
+                return ask
+            promptAgain('again')
+        elif prompt == 'coords':
+            ask = input("Please Enter coordinates (Ex. x,y): ")
+            return ask
+        elif prompt == 'userVal':
+            ask = input("Please Enter Value: ")
+            return ask
+        elif prompt == 'cageSum':
+            ask = int(input("Please Enter Cage Sum: "))
+            return ask
+    except KeyboardInterrupt:
+        print("\nExiting program.")
+        sys.exit()
         
-        print("\n\nUpdated board:")
-        print_boxes_layout(board)
+def getCageInput():
+    availableCoords = getAvailableCoordinates()
+    print("FORMAT: (row, col)")
+    print("Available coordinates: ", availableCoords)
+    print("NOTE: Just press Enter to close the cage prompt.")
+    cage_sets = []
+    while True:
+        cages_input = cagePrompt(availableCoords)
+        if cages_input == '':
+            break
+        cage_sets.append(cages_input)
 
-    hill_climb_board = solve(board)
-    row_col_errors, duplicates = check_errors(hill_climb_board)
+    list_cage = []
+    for cage_set in cage_sets:
+        cells = tuple(map(int, cage_set.split(",")))
+        list_cage.append(cells)
 
-    # Check if there are no errors 
-    if not row_col_errors and not duplicates:
-        print("\n>>>Solution found:")
-        print_boxes_layout(hill_climb_board)
-    else:
-        print("\n>>>No solution found.")
-        print("This is the last attempt of the hill-climb algorithm")
-        print_boxes_layout(hill_climb_board)
+    sumCage = getCageSum(len(list_cage))
+    cages.append((list_cage, sumCage))
+    
+def cagePrompt(availableCoords):
+    try:
+        while True:
+            coords = input('Enter Cage Cell: ')
+            if not coords:
+                return ''
+            
+            x, y = coords.split(',')
+            if len(coords) != 3 and coords[1] != ',' or (int(x) >= 4 or int(y) >= 4):
+                print("Invalid Coordinates!! Try Again...")
+                return cagePrompt(availableCoords)
+            elif (int(x),int(y)) not in availableCoords:
+                print("Coordinate already been selected in other cage, Try Again!")
+                return cagePrompt(availableCoords)
+            else: 
+                return coords
+                
+    except ValueError:
+        print("Invalid Coordinates!! Try Again...")
+        return cagePrompt(availableCoords)
+    except KeyboardInterrupt:
+        print("\nExiting program.")
+        sys.exit()
+        
+def getAvailableCoordinates():
+    all_coordinates = set((i, j) for i in range(4) for j in range(4))
+    used_coordinates = set(coords for cage, _ in cages for coords in cage)
+    available_coordinates = all_coordinates - used_coordinates
+    sorted_coordinates = sorted(list(available_coordinates))
+    return sorted_coordinates
 
-    for text in texts:
-        print(text)
+def getPossibleSums(cellCount):
+    numbers = [1, 2, 3, 4]
+    all_combinations = list(combinations(numbers, cellCount))
+    possible_sums = set()
 
-if __name__ == "__main__":
-    main()
+    for combination in all_combinations:
+        possible_sums.add(sum(combination))
+
+    return sorted(list(possible_sums))
+    
+def getCageSum(cellCount):
+    availableSums = getPossibleSums(cellCount)
+    print(" Available Cage Sum: ", availableSums)
+    
+    while True:
+        askUserCageSum = promptAgain("cageSum")
+        if askUserCageSum in availableSums:
+            print(" Sum: ", askUserCageSum)
+            return askUserCageSum
+        else:
+            print(" Invalid sum for cage, Try again...")
+
+def printMatrixWithCages(matrix, cages):
+    def getCageId(coord, cages):
+        for idx, (cage_coords, cageSum) in enumerate(cages):
+            if coord in cage_coords:
+                return cageSum
+        return 0
+
+    print("MATRIX:")
+    print("    0       1       2       3")
+    print('---------------------------------')
+    for i in range(len(matrix)):
+        for j in range(len(matrix[i])):
+            print('|', end=' ')
+            cell_value = matrix[i][j]
+            cage_id = getCageId((i, j), cages)
+            print(f'{cell_value} ({cage_id})', end=' ')
+        print('|', end='   ')
+        print(i)
+        print('---------------------------------')
+
+# Simulated Annealing for Killer Sudoku
+
+def generateInitialState(matrix):
+    # Randomly fill some cells with valid numbers
+    for i in range(4):
+        for j in range(4):
+            if random.random() < 1:  # Adjust the probability as needed
+                valid_numbers = getValidNumbers(matrix, i, j)
+                print("Valid Number: ", valid_numbers)
+                if valid_numbers:
+                    matrix[i][j] = random.choice(valid_numbers)
+
+def getValidNumbers(matrix, row, col):
+    # Get numbers that can be placed in a cell without violating Killer Sudoku rules
+    valid_numbers = list(range(1, 5))
+
+    # Check row and column constraints
+    for i in range(4):
+        if matrix[row][i] in valid_numbers:
+            valid_numbers.remove(matrix[row][i])
+        if matrix[i][col] in valid_numbers:
+            valid_numbers.remove(matrix[i][col])
+
+    # Check 2x2 subgrid constraints
+    start_row, start_col = 2 * (row // 2), 2 * (col // 2)
+    for i in range(start_row, start_row + 2):
+        for j in range(start_col, start_col + 2):
+            if matrix[i][j] in valid_numbers:
+                valid_numbers.remove(matrix[i][j])
+
+    # Shuffle the list of valid numbers
+    random.shuffle(valid_numbers)
+
+    return valid_numbers
+
+def calculateScore(matrix, cages):
+    score = 0
+    for cage_coords, target_sum in cages:
+        cage_sum = sum(matrix[i][j] for i, j in cage_coords)
+        score += abs(cage_sum - target_sum)
+    return score
+
+def hillClimbing(matrix, cages):
+    current_score = calculateScore(matrix, cages)
+
+    while True:
+        best_move_found = False
+        for i in range(4):
+            for j in range(4):
+                valid_numbers = getValidNumbers(matrix, i, j)
+                for num in valid_numbers:
+                    original_value = matrix[i][j]
+                    matrix[i][j] = num
+                    # new_score = calculateScore(matrix, cages)
+                    # if new_score < current_score:
+                    #     current_score = new_score
+                    #     best_move_found = True
+                    # else:
+                    #     matrix[i][j] = original_value  # Undo move if it doesn't improve the score
+
+        if not best_move_found:
+            break
+
+if __name__ == '__main__':
+    matrix = initializeMatrix()
+    askAgain = 'y'
+    
+    # while True:
+    #     printMatrixWithCages(matrix, cages)
+    #     getCageInput()
+    #     print("Cages: ", cages)
+    #     if not getAvailableCoordinates():
+    #         break
+    
+    generateInitialState(matrix)
+    print("Initial Matrix:")
+    printMatrixWithCages(matrix, cages)
+    # print("Initial Score:", calculateScore(matrix, cages))
+
+    # hillClimbing(matrix, cages)
+
+    # print("\nFinal Matrix after Hill Climbing:")
+    # printMatrixWithCages(matrix, cages)
+    # print("Final Score:", calculateScore(matrix, cages))
+    
+    # while askAgain == 'y':
+    #     printMatrix(matrix)
+        
+    #     x, y = getCoords();
+        
+    #     print("Value: ", getValue(matrix, x, y))
+    #     printMatrix(matrix)
+        
+    #     askAgain = promptAgain('again')

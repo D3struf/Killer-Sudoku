@@ -1,8 +1,9 @@
 from itertools import combinations
+from colorama import Fore, Back, Style
 import sys
 import random
 
-cages = []
+cages = [([(0, 0), (0, 1)], 7), ([(0, 2), (1, 2)], 5), ([(0, 3), (1, 3), (2, 3)], 7), ([(1, 0), (1, 1), (2, 1)], 7), ([(2, 0), (3, 0)], 4), ([(2, 2), (3, 1), (3, 2), (3, 3)], 10)]
 
 def initializeMatrix():
     return [[0 for _ in range(4)] for _ in range(4)]
@@ -108,7 +109,6 @@ def printMatrixWithCages(matrix, cages):
                 return cageSum
         return 0
 
-    print("MATRIX:")
     print("    0       1       2       3")
     print('---------------------------------')
     for i in range(len(matrix)):
@@ -161,9 +161,6 @@ def checkDuplicates(matrix):
     col_duplicates = checkColumnDuplicates(matrix)
     subgrid_duplicates = checkSubgridDuplicates(matrix)
 
-    print(' Row Duplicates: ', row_duplicates)
-    print(' Column Duplicates: ', col_duplicates)
-    print(' 2x2 Subgrid Duplicates: ', subgrid_duplicates)
     total_duplicates = row_duplicates + col_duplicates + subgrid_duplicates
     return total_duplicates
 
@@ -228,7 +225,11 @@ def hillClimbing(matrix):
         current_duplicates = checkDuplicates(matrix)
 
         if current_duplicates == 0:
-            print("Solution found:")
+            indicator(Fore.WHITE, Back.YELLOW, "           SOLUTION FOUND!!!           ")
+            print()
+            print()
+            indicator(Fore.WHITE, Back.GREEN, "             KILLER SUDOKU             ") 
+            print()
             printMatrixWithCages(matrix, cages)
             break
 
@@ -247,25 +248,43 @@ def hillClimbing(matrix):
                 swap_i, swap_j = random.choice(cage_coords)
                 matrix[i][j], matrix[swap_i][swap_j] = matrix[swap_i][swap_j], matrix[i][j]
 
+def indicator(foreground, background, string):
+    print(f"{Style.BRIGHT}{background}{Fore.WHITE}{foreground}{string}{Style.RESET_ALL}", end='')
+
+def printCredentials():
+    indicator(Fore.WHITE, Back.BLUE, "   NAME   ")
+    indicator(Fore.BLUE, Back.WHITE, " John Paul S. Monter                          ")
+    print()
+    indicator(Fore.WHITE, Back.LIGHTRED_EX, " SECTION  ")
+    indicator(Fore.LIGHTRED_EX, Back.WHITE, " BSCS - 3B                                    ")
+    print()
+    indicator(Fore.WHITE, Back.LIGHTGREEN_EX , "  COURSE  ")
+    indicator(Fore.LIGHTGREEN_EX , Back.WHITE, " Artificial Intelligence                      ")
+    print()
+    indicator(Fore.WHITE, Back.LIGHTBLUE_EX, "  GITHUB  ")
+    indicator(Fore.LIGHTBLUE_EX, Back.WHITE, " https://github.com/D3struf/Killer-Sudoku.git ")
+
+
 if __name__ == '__main__':
     matrix = initializeMatrix()
     askAgain = 'y'
     
-    while True:
-        printMatrixWithCages(matrix, cages)
-        getCageInput()
-        print("Cages: ", cages)
-        if not getAvailableCoordinates():
-            break
+    # while True:
+    #     printMatrixWithCages(matrix, cages)
+    #     getCageInput()
+    #     if not getAvailableCoordinates():
+    #         break
     
-    matrix = generateInitialState(matrix)
-    print("Initial Matrix:")
+    indicator(Fore.WHITE, Back.GREEN, "             KILLER SUDOKU             ") 
+    print()
     printMatrixWithCages(matrix, cages)
     
-    result = checkDuplicates(matrix)
-    print(f"Number of pairs of duplicates: {result}")
-
+    matrix = generateInitialState(matrix)
+    indicator(Fore.WHITE, Back.GREEN, " AI finding solution... It will take a while...")
+    print()
     hillClimbing(matrix)
     
     result = checkDuplicates(matrix)
     print(f"Number of pairs of duplicates: {result}")
+    
+    printCredentials()
