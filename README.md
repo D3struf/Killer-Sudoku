@@ -63,6 +63,6 @@ Hill Climbing is a local search algorithm that continuously moves towards the di
 ![Overall Result](img/image-3.png)
 
 ## Credits
-- John Paul S. Monter: Developer
+- Developer: [John Paul S. Monter](https://github.com/D3struf)
 - Course: Artificial Intelligence
-- GitHub: ![Killer-Sudoku Repository](https://github.com/D3struf/Killer-Sudoku.git)
+- GitHub: [Killer-Sudoku Repository](https://github.com/D3struf/Killer-Sudoku.git)
