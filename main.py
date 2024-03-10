@@ -1,9 +1,28 @@
+# Killer Sudoku Problem
+# Made by John Paul Monter
+
+# Each row should have numbers 1 to 4 and does not have a duplicate.
+# Each column should have numbers 1 to 4 and does not have a duplicate.
+# Each row, col, and 2x2 subgrid should have a sum of 10.
+# Each group has a sum entered by the user.
+# If a group has only one cell then the sum and the number should be the same.
+# In a cage no number must appear more than once
+
 from itertools import combinations
 from colorama import Fore, Back, Style
 import sys
 import random
 
-cages = [([(0, 0), (0, 1)], 7), ([(0, 2), (1, 2)], 5), ([(0, 3), (1, 3), (2, 3)], 7), ([(1, 0), (1, 1), (2, 1)], 7), ([(2, 0), (3, 0)], 4), ([(2, 2), (3, 1), (3, 2), (3, 3)], 10)]
+# Sample input
+# cages = [([(0, 0), (0, 1)], 6), 
+#         ([(0, 2), (0, 3)], 4),
+#         ([(1, 0), (2, 0), (2, 1)], 6),
+#         ([(1, 1), (1, 2)], 3),
+#         ([(1, 3), (2, 3)], 7),
+#         ([(3, 0), (3, 1)], 7),
+#         ([(2, 2), (3, 2), (3, 3)], 7)]
+
+cages = []
 
 def initializeMatrix():
     return [[0 for _ in range(4)] for _ in range(4)]
