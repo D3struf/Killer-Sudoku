@@ -35,9 +35,9 @@ Hill Climbing is a local search algorithm that continuously moves towards the di
 
 
 ## Instructions
-- Clone the repository: git clone https://github.com/D3struf/Killer-Sudoku.git
-- Navigate to the project directory: cd Killer-Sudoku
-- Run the Python script: python killer_sudoku.py
+- Clone the repository: `git clone https://github.com/D3struf/Killer-Sudoku.git`
+- Navigate to the project directory: `cd Killer-Sudoku`
+- Run the Python script: `python killer_sudoku.py`
 - Follow the prompts to input cage sums and coordinates.
 - Wait for the solver to find a solution.
 
