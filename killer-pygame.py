@@ -1,107 +1,67 @@
-from random import randint, shuffle
+import pygame
+import sys
+from pygame.locals import *
 
-def valid(board, pos, num):
-    """
-    Checks whether a number is valid in a cell of the sudoku board.
+# Define colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (200, 200, 200)
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
 
-    Args:
-        board (list[list[int]]): A 9x9 sudoku board represented as a list of lists of integers.
-        pos (tuple[int, int]): The position of the cell to check as a tuple of row and column indices.
-        num (int): The number to check.
+# Define constants
+WIDTH = 400
+HEIGHT = 400
+CELL_SIZE = 50
+GRID_SIZE = 10
+BUTTON_WIDTH = 80
+BUTTON_HEIGHT = 30
 
-    Returns:
-        bool: True if the number is valid in the cell, False otherwise.
-    """
+def draw_button(screen, x, y, width, height, text, selected=False):
+    if selected:
+        color = BLUE
+    else:
+        color = GRAY
+    pygame.draw.rect(screen, color, (x, y, width, height))  # Draw the button background
+    font = pygame.font.Font(None, 24)
+    text_surface = font.render(text, True, BLACK)
+    text_rect = text_surface.get_rect(center=(x + width / 2, y + height / 2))
+    screen.blit(text_surface, text_rect)
 
-    for i in range(9):
-        if board[i][pos[1]] == num:
-            return False
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Grid Buttons")
+    
+    buttons = []
+    
+    number = 0
+    for i in range(5):
+        for j in range(2):
+            number += 1
+            x = j * CELL_SIZE
+            y = i * CELL_SIZE
+            buttons.append((x, y, CELL_SIZE, CELL_SIZE, str(number), False))
 
-    for j in range(9):
-        if board[pos[0]][j] == num:
-            return False
+    while True:
+        screen.fill(WHITE)
+        
+        for button in buttons:
+            draw_button(screen, *button)
+        
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == MOUSEBUTTONDOWN:
+                x, y = event.pos
+                for button in buttons:
+                    bx, by, bw, bh, _, selected = button
+                    if bx <= x < bx + bw and by <= y < by + bh:
+                        # Toggle the selected state of the clicked button
+                        button[5] = not selected
+        
+        pygame.display.flip()
 
-    start_i = pos[0] - pos[0] % 3
-    start_j = pos[1] - pos[1] % 3
-    for i in range(3):
-        for j in range(3):
-            if board[start_i + i][start_j + j] == num:
-                return False
-    return True
-
-def generate_board():
-    """
-    Generates a random sudoku board with fewer initial numbers.
-
-    Returns:
-        list[list[int]]: A 9x9 sudoku board represented as a list of lists of integers.
-    """
-
-    board = [[0 for i in range(9)] for j in range(9)]
-
-    # Fill the diagonal boxes
-    for i in range(0, 9, 3):
-        nums = list(range(1, 10))
-        shuffle(nums)
-        for row in range(3):
-            for col in range(3):
-                board[i + row][i + col] = nums.pop()
-
-    # Fill the remaining cells with backtracking
-    def fill_cells(board, row, col):
-        """
-        Fills the remaining cells of the sudoku board with backtracking.
-
-        Args:
-            board (list[list[int]]): A 9x9 sudoku board represented as a list of lists of integers.
-            row (int): The current row index to fill.
-            col (int): The current column index to fill.
-
-        Returns:
-            bool: True if the remaining cells are successfully filled, False otherwise.
-        """
-
-        if row == 9:
-            return True
-        if col == 9:
-            return fill_cells(board, row + 1, 0)
-
-        if board[row][col] != 0:
-            return fill_cells(board, row, col + 1)
-
-        for num in range(1, 10):
-            if valid(board, (row, col), num):
-                board[row][col] = num
-
-                if fill_cells(board, row, col + 1):
-                    return True
-
-        board[row][col] = 0
-        return False
-
-    fill_cells(board, 0, 0)
-
-    # Remove a greater number of cells to create a puzzle with fewer initial numbers
-    for _ in range(randint(55, 65)):
-        row, col = randint(0, 8), randint(0, 8)
-        board[row][col] = 0
-
-    return board
-
-def print_board(board):
-    boardString = ""
-    for i in range(9):
-        for j in range(9):
-            boardString += str(board[i][j]) + " "
-            if (j + 1) % 3 == 0 and j != 0 and j + 1 != 9:
-                boardString += "| "
-
-            if j == 8:
-                boardString += "\n"
-
-            if j == 8 and (i + 1) % 3 == 0 and i + 1 != 9:
-                boardString += "- - - - - - - - - - - \n"
-    print(boardString)
-
-board = generate_board()
-print_board(board)
+if __name__ == "__main__":
+    main()

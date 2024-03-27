@@ -14,11 +14,15 @@ WIDTH, HEIGHT = 600, 600
 GRID_SIZE = 4
 CELL_SIZE = 600 // GRID_SIZE
 
+# Matrix
+def initializeMatrix():
+    return [[0 for _ in range(4)] for _ in range(4)]
+
 pygame.init()
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Killer Sudoku")
-icon = pygame.image.load('./assets/img/Killer Sudoku Icon.png')
+icon = pygame.image.load('./assets/Killer Sudoku Icon.png')
 pygame.display.set_icon(icon)
 
 # Function to draw the Sudoku grid
