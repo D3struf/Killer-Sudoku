@@ -1,7 +1,7 @@
 import sys
 from itertools import combinations
 import random
-
+from colorama import Fore, Back, Style
 cages = []
 
 # cages = [([(0, 0), (0, 1)], 7), 
@@ -34,6 +34,10 @@ def promptAgain(prompt):
     except KeyboardInterrupt:
         print("\nExiting program.")
         sys.exit()
+    except ValueError:
+        print("Invalid Coordinates!! Try Again...")
+        return promptAgain(prompt)
+        
 
 def getCageInput():
     availableCoords = getAvailableCoordinates()
@@ -153,14 +157,20 @@ def solveSudoku(matrix):
     if not empty_cell:
         return True  # Puzzle solved successfully
     row, col = empty_cell
-
+    # printMatrix(matrix)
     for num in range(1, 5):  # Try numbers 1 to 4
         if isValidMove(matrix, row, col, num):
             matrix[row][col] = num
             if solveSudoku(matrix):
                 return True
-            matrix[row][col] = 0  # Backtrack if the current assignment does not lead to a solution
+            matrix[row][col] = 0  # Clear the cell if the current assignment does not lead to a solution
     return False
+
+def isValidMove(matrix, row, col, num):
+    return not usedInRow(matrix, row, num) and \
+            not usedInCol(matrix, col, num) and \
+            not usedInBox(matrix, row - row % 2, col - col % 2, num) and \
+            not violatesCageSum(matrix, row, col, num)
 
 def findEmptyCell(matrix):
     for i in range(4):
@@ -168,12 +178,6 @@ def findEmptyCell(matrix):
             if matrix[i][j] == 0:
                 return (i, j)  # Return the coordinates of the first empty cell
     return None
-
-def isValidMove(matrix, row, col, num):
-    return not usedInRow(matrix, row, num) and \
-            not usedInCol(matrix, col, num) and \
-            not usedInBox(matrix, row - row % 2, col - col % 2, num) and \
-            not violatesCageSum(matrix, row, col, num)
 
 def usedInRow(matrix, row, num):
     return num in matrix[row] 
@@ -196,14 +200,43 @@ def violatesCageSum(matrix, row, col, num):
                 return True
     return False
 
+def indicator(foreground, background, string):
+    print(f"{Style.BRIGHT}{background}{Fore.WHITE}{foreground}{string}{Style.RESET_ALL}", end='')
+
+def printCredentials():
+    indicator(Fore.WHITE, Back.BLUE, "       NAME      ")
+    indicator(Fore.BLUE, Back.WHITE, " John Paul S. Monter                          ")
+    print()
+    indicator(Fore.WHITE, Back.LIGHTRED_EX, "     SECTION     ")
+    indicator(Fore.LIGHTRED_EX, Back.WHITE, " BSCS - 3B                                    ")
+    print()
+    indicator(Fore.WHITE, Back.LIGHTGREEN_EX , "      COURSE     ")
+    indicator(Fore.LIGHTGREEN_EX , Back.WHITE, " Artificial Intelligence                      ")
+    print()
+    indicator(Fore.WHITE, Back.LIGHTGREEN_EX , " MACHINE PROBLEM ")
+    indicator(Fore.LIGHTRED_EX , Back.WHITE, " #3                                           ")
+    print()
+    indicator(Fore.WHITE, Back.LIGHTBLUE_EX, "     GITHUB      ")
+    indicator(Fore.LIGHTBLUE_EX, Back.WHITE, " https://github.com/D3struf/Killer-Sudoku.git ")
+
 if __name__ == '__main__':
     matrix = initializeMatrix()
     askAgain = 'y'
+    
     while True:
         getCageInput()
-        print("Cages: ", cages)
         if not getAvailableCoordinates():
             break
-        
-    solveSudoku(matrix)
+    
+    indicator(Fore.WHITE, Back.GREEN, "             KILLER SUDOKU             ") 
+    print()
     printMatrix(matrix)
+    
+    indicator(Fore.WHITE, Back.GREEN, " Finding solution... It will take a while...")
+    print()
+    solveSudoku(matrix)
+    indicator(Fore.WHITE, Back.GREEN, " Sudoku solved successfully!!")
+    print()
+    printMatrix(matrix)
+    
+    printCredentials()
