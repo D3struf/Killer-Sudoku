@@ -1,10 +1,13 @@
 # Killer-Sudoku-Solver
+
 Killer Sudoku Problem Solver Agent using Hill Climbing Algorithm
 
 ## Overview
+
 This Python program solves the Killer Sudoku puzzle, a variant of the classic Sudoku puzzle. The solver incorporates both user input for defining cage sums and an AI-based hill climbing algorithm to find a solution.
 
 ## Features
+
 - User-friendly interface for inputting cage sums and coordinates.
 - Utilizes the hill climbing algorithm to iteratively improve the solution.
 - Validates the generated matrix to ensure it meets Killer Sudoku rules.
@@ -33,7 +36,6 @@ Hill Climbing is a local search algorithm that continuously moves towards the di
 5. **Repeat:**
     - Repeat steps 2-4 for a specified number of iterations or until no improvement is possible.
 
-
 ## Instructions
 
 - Clone the repository: `git clone https://github.com/D3struf/Killer-Sudoku.git`
@@ -59,19 +61,19 @@ Hill Climbing is a local search algorithm that continuously moves towards the di
 
 ### Killer Sudoku after user inputs
 
-![After User Input the Cages](img/image.png)
+![After User Input the Cages](assets/image.png)
 
 ### AI loading and looking for the solution
 
-![Loading](img/image-1.png)
+![Loading](assets/image-1.png)
 
 ### AI found the solution using the algorithm described
 
-![Found Solution!](img/image-2.png)
+![Found Solution!](assets/image-2.png)
 
 ### Overall Results
 
-![Overall Result](img/image-3.png)
+![Overall Result](assets/image-3.png)
 
 ## Credits
 
