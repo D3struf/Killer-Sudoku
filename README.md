@@ -35,6 +35,7 @@ Hill Climbing is a local search algorithm that continuously moves towards the di
 
 
 ## Instructions
+
 - Clone the repository: `git clone https://github.com/D3struf/Killer-Sudoku.git`
 - Navigate to the project directory: `cd Killer-Sudoku`
 - Run the Python script: `python killer_sudoku.py`
@@ -42,27 +43,38 @@ Hill Climbing is a local search algorithm that continuously moves towards the di
 - Wait for the solver to find a solution.
 
 ## Requirements
+
 - Python 3.x
 - colorama (for colored output)
 - itertools (for generating combinations)
 
 ## Usage
+
 1. When prompted, enter the coordinates of each cage cell in the format (row, col).
 2. Input the sum for each cage, ensuring it adheres to Killer Sudoku rules.
 3. The program will generate an initial matrix and attempt to solve it using the hill climbing algorithm.
 4. Once a solution is found, the final matrix will be displayed along with the number of duplicate pairs.
 
 ## Documentation
+
 ### Killer Sudoku after user inputs
+
 ![After User Input the Cages](img/image.png)
+
 ### AI loading and looking for the solution
+
 ![Loading](img/image-1.png)
+
 ### AI found the solution using the algorithm described
+
 ![Found Solution!](img/image-2.png)
+
 ### Overall Results
+
 ![Overall Result](img/image-3.png)
 
 ## Credits
+
 - Developer: [John Paul S. Monter](https://github.com/D3struf)
 - Course: Artificial Intelligence
 - GitHub: [Killer-Sudoku Repository](https://github.com/D3struf/Killer-Sudoku.git)
